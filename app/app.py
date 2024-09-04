@@ -42,7 +42,7 @@ class SpeedTestResult(Base):
     timestamp = Column(DateTime, default=lambda: datetime.now())
     download_speed = Column(Float, nullable=False)
     upload_speed = Column(Float, nullable=False)
-    ping = Column(Float, nullable=False)
+    ping = Column(Float, nullable=True)
 
 
 async def test_internet_connection():
@@ -57,13 +57,18 @@ async def test_internet_connection():
 
 async def test_internet_speed():
     test_start_time = datetime.now()
-    st = Speedtest()
-    st.download()
-    st.upload()
-    results = st.results.dict()
-    download_speed_mbps = results["download"] / 1_000_000  # Convert to Mbps
-    upload_speed_mbps = results["upload"] / 1_000_000      # Convert to Mbps
-    ping_ms = results["ping"]                              # Already in ms (milliseconds)
+    try:
+        st = Speedtest()
+        st.download()
+        st.upload()
+        results = st.results.dict()
+        download_speed_mbps = results["download"] / 1_000_000  # Convert to Mbps
+        upload_speed_mbps = results["upload"] / 1_000_000      # Convert to Mbps
+        ping_ms = results["ping"]
+    except:
+        download_speed_mbps = 0
+        upload_speed_mbps = 0
+        ping_ms = None
     return test_start_time, download_speed_mbps, upload_speed_mbps, ping_ms
 
 
@@ -110,7 +115,7 @@ async def run():
     asyncio.create_task(connection_test_scheduler())
     asyncio.create_task(speed_test_scheduler())
     while True:
-        await asyncio.sleep(3600)
+        await asyncio.sleep(600)
 
 if __name__ == "__main__":
     asyncio.run(run())
